@@ -2,12 +2,17 @@ import requests
 import os
 import subprocess
 from datetime import datetime, timedelta
+from dotenv import load_dotenv
+from shutil import which
+
+# Load sensitive data from .env
+load_dotenv()
 
 # DefectDojo configuration
-BASE_URL = 'https://dojo.nktech.online/api/v2'
-API_TOKEN = 'a5a52cd1453cea1d002bbe808f2b220b1dd9e795'
-PRODUCT_ID = 1
-ENVIRONMENT = 'Development'
+BASE_URL = os.getenv('DEFECTDOJO_URL', 'https://dojo.nktech.online/api/v2')
+API_TOKEN = os.getenv('DEFECTDOJO_API_TOKEN')
+PRODUCT_ID = int(os.getenv('DEFECTDOJO_PRODUCT_ID', '1'))
+ENVIRONMENT = os.getenv('DEFECTDOJO_ENVIRONMENT', 'Development')
 BANDIT_REPORT_PATH = 'bandit-report.json'
 
 # Headers
@@ -17,7 +22,7 @@ HEADERS = {
 
 def get_active_engagement(product_id):
     url = f"{BASE_URL}/engagements/?product={product_id}&active=true"
-    res = requests.get(url, headers=HEADERS)
+    res = requests.get(url, headers=HEADERS, timeout=10)
     res.raise_for_status()
     engagements = res.json().get('results', [])
     return engagements[0]['id'] if engagements else None
@@ -35,14 +40,15 @@ def create_engagement(product_id):
         "status": "In Progress"
     }
 
-    response = requests.post(f"{BASE_URL}/engagements/", json=payload, headers=HEADERS)
+    response = requests.post(f"{BASE_URL}/engagements/", json=payload, headers=HEADERS, timeout=10)
     response.raise_for_status()
     print("✅ Created new engagement.")
     return response.json()['id']
 
 def get_git_commit_id():
     try:
-        return subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode().strip()
+        git_path = which("git") or "git"
+        return subprocess.check_output([git_path, 'rev-parse', 'HEAD']).decode().strip()  # nosec B603
     except subprocess.CalledProcessError:
         return "unknown"
 
@@ -70,7 +76,7 @@ def upload_bandit_scan(engagement_id):
     }
 
     print(f"📤 Uploading Bandit report to engagement {engagement_id}...")
-    response = requests.post(f"{BASE_URL}/import-scan/", headers=HEADERS, files=files, data=data)
+    response = requests.post(f"{BASE_URL}/import-scan/", headers=HEADERS, files=files, data=data, timeout=20)
 
     if response.status_code == 201:
         print("✅ Bandit report uploaded successfully.")
