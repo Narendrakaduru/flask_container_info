@@ -23,15 +23,3 @@ This is a simple Flask web app that displays the hostname of the container or ma
 
 ---
 
-## 🗂️ Project Structure
-
-flask_container_info/
-├── app.py # Flask app logic
-├── Dockerfile # Container build instructions
-├── docker-compose.yml # Compose configuration
-├── requirements.txt # Python dependencies
-├── static/
-│ └── style.css # CSS styles
-└── templates/
-└── index.html # Frontend HTML with JS
-
