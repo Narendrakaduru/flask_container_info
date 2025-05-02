@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Container Info</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script>
+    window.onload = async () => {
+      const res = await fetch('/hostname');
+      const data = await res.json();
+      document.getElementById('hostname').textContent = data.hostname;
+    };
+  </script>
+</head>
+<body>
+  <div class="container">
+    <h1>🛳️ Container Info</h1>
+    <p>This page is served from container:</p>
+    <div class="hostname" id="hostname">Loading...</div>
+  </div>
+</body>
+</html>
