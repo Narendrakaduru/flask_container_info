@@ -23,7 +23,7 @@ pipeline {
             steps {
                 sh '''
                     pip install --no-cache-dir bandit
-                    bandit -r -lll -iii . -f json -o /workspace/bandit-report.json
+                    bandit -r -lll -iii . -f json | tee /workspace/bandit-report.json
                 '''
             }
         }
@@ -34,7 +34,7 @@ pipeline {
                 sh '''
                     pip install python-dotenv
                     cd "$WORKSPACE"
-                    # python3 upload_to_defectdojo.py
+                    python3 upload_to_defectdojo.py
                 '''
             }
         }
@@ -114,6 +114,31 @@ pipeline {
             }
           }
         }
+        
+        stage('Sync to ArgoCD') {
+            agent { label 'vldocsrv091' }
+            steps {
+                script {
+                    try {
+                        echo "🔄 Syncing to ArgoCD..."
+                        sh '''
+                        # Check if the script exists
+                        ls -l $WORKSPACE
+                        cd $WORKSPACE
+                        # Make sure the script is executable
+                        chmod +x ./sync_flask_container_info_manifests.sh
+                        sudo ./sync_flask_container_info_manifests.sh
+                        '''
+                        echo "✅ Successfully synced to ArgoCD!"
+                    } catch (Exception e) {
+                        echo "❌ ArgoCD sync failed: ${e.message}"
+                        currentBuild.result = 'FAILURE'
+                        error("ArgoCD sync failed.")
+                    }
+                }
+            }
+        }
+
 		
     }
 }
